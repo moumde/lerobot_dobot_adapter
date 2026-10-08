@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from dataclasses import dataclass, field
+from typing import Literal
 
 from lerobot.cameras import CameraConfig
 
@@ -17,6 +18,12 @@ class DobotCR5O6Config:
 
     ip: str
 
+    # The same physical arm can be deployed with two dataset action
+    # conventions.  Keep TCP-delta as the default for existing datasets.
+    # ``joint_target`` is used by the new CR3/O6 dataset and sends absolute
+    # joint targets (radians in the dataset, converted to degrees for ROS).
+    control_mode: Literal["tcp_delta", "joint_target"] = "tcp_delta"
+
     # ROS2 driver uses 6001 and 7000 by default.
     # Keep 6000 here as well because some SDK configurations use it.
     ports: tuple[int, ...] = (6000, 6001, 7000)
@@ -31,7 +38,9 @@ class DobotCR5O6Config:
     camera_height: int = 224
     camera_width: int = 224
 
-    # ROI extracted from the resized right camera.
+    # ROI extracted from the resized right camera.  In joint_target mode the
+    # full right image is exposed as base_0_rgb and this ROI as
+    # right_wrist_0_rgb, matching the CR3/O6 dataset.
     #
     # [x1, y1, x2, y2]
     #
@@ -66,6 +75,26 @@ class DobotCR5O6Config:
     # unset until calibrated for the physical installation.
     workspace_min_m: tuple[float, float, float] | None = None
     workspace_max_m: tuple[float, float, float] | None = None
+
+    # Safety envelope for absolute joint targets in radians.  These bounds
+    # match the observed action envelope of the new CR3/O6 dataset.  They are
+    # only used when control_mode == "joint_target".
+    joint_target_min_rad: tuple[float, ...] = (
+        -0.4524068,
+        -1.3138773,
+        -0.7545326,
+        -0.2983725,
+        -1.1004673,
+        -2.1733513,
+    )
+    joint_target_max_rad: tuple[float, ...] = (
+        0.6747624,
+        0.2520110,
+        1.2331995,
+        2.5263002,
+        0.9260743,
+        2.4551303,
+    )
 
     # ================================================================
     # LinkerHand O6

@@ -24,13 +24,13 @@ conda activate lerobot
 ## 将灵巧手的sdk路径添加至python环境
 export PYTHONPATH=/home/je/code/linkerhand-python-sdk/LinkerHand:$PYTHONPATH
 
-# 测试手部和相机功能正常
+## 测试手部和相机功能正常
 python3 src/lerobot/robots/dobot_cr5_o6/test_camera_hand.py
 
-# 启动ACT推理
+## 启动ACT推理
 python3 src/lerobot/robots/dobot_cr5_o6/deploy_dobot.py
 
-# 启动PI05推理
+## 启动PI05推理
 python3 src/lerobot/robots/dobot_cr5_o6/deploy_dobot_pi05.py
 
 

@@ -70,6 +70,34 @@ ACTION_NAMES = (
     "o6.little_flex.command",
 )
 
+# New CR3/O6 dataset schema.  The physical arm driver is shared with the
+# legacy CR5/TCP schema above; only the policy-facing names and action
+# semantics differ.
+CR3_JOINT_STATE_NAMES = (
+    "cr3.q1.rad",
+    "cr3.q2.rad",
+    "cr3.q3.rad",
+    "cr3.q4.rad",
+    "cr3.q5.rad",
+    "cr3.q6.rad",
+    *O6_STATE_NAMES,
+)
+
+CR3_JOINT_TARGET_ACTION_NAMES = (
+    "cr3.target_q1.rad",
+    "cr3.target_q2.rad",
+    "cr3.target_q3.rad",
+    "cr3.target_q4.rad",
+    "cr3.target_q5.rad",
+    "cr3.target_q6.rad",
+    "o6.thumb_flex.command",
+    "o6.thumb_yaw.command",
+    "o6.index_flex.command",
+    "o6.middle_flex.command",
+    "o6.ring_flex.command",
+    "o6.little_flex.command",
+)
+
 # Pose used when starting and leaving a deployment run.  The CR5 joint
 # interface expects degrees and includes one external-axis value; the O6
 # interface expects six register values in the range [0, 255].
@@ -367,7 +395,7 @@ class DobotCR5O6(Robot):
         + LinkerHand O6
         + left RealSense
         + right RealSense
-        + right-camera ROI as base camera
+        + mode-dependent right-camera image/ROI mapping
     """
 
     config_class = DobotCR5O6RobotConfig
@@ -550,12 +578,12 @@ class DobotCR5O6(Robot):
             self.config.camera_width,
         )
 
-    def _get_base_from_right(
+    def _get_right_wrist_roi(
         self,
         right_image: np.ndarray,
     ) -> np.ndarray:
         """
-        Extract base camera from the resized right image.
+        Extract the right-wrist ROI from the resized right camera image.
 
         roi_norm:
             [x1, y1, x2, y2]
@@ -618,18 +646,18 @@ class DobotCR5O6(Robot):
     def observation_features(
         self,
     ) -> dict[str, Any]:
+        if self.config.control_mode == "joint_target":
+            state_names = CR3_JOINT_STATE_NAMES
+        else:
+            state_names = CR5_JOINT_STATE_NAMES + CR5_TCP_STATE_NAMES + O6_STATE_NAMES
+
         # Robot features describe the raw keys returned by get_observation().
         # LeRobot adds the ``observation.`` / ``observation.images.`` prefixes
         # when it builds dataset features.  Keeping those prefixes out here is
         # important because build_dataset_frame() uses the raw keys to assemble
         # the vector expected by the policy.
         return {
-            **{
-                name: float
-                for name in CR5_JOINT_STATE_NAMES
-                + CR5_TCP_STATE_NAMES
-                + O6_STATE_NAMES
-            },
+            **{name: float for name in state_names},
             "base_0_rgb": (
                 self.config.camera_height,
                 self.config.camera_width,
@@ -651,10 +679,15 @@ class DobotCR5O6(Robot):
     def action_features(
         self,
     ) -> dict[str, Any]:
+        action_names = (
+            CR3_JOINT_TARGET_ACTION_NAMES
+            if self.config.control_mode == "joint_target"
+            else ACTION_NAMES
+        )
         # As with observation_features, this describes the raw action keys
         # accepted by send_action().  Dataset construction later aggregates
         # them into the single ``action`` vector.
-        return {name: float for name in ACTION_NAMES}
+        return {name: float for name in action_names}
 
     # ============================================================
     # Connection
@@ -790,10 +823,6 @@ class DobotCR5O6(Robot):
             self.arm.get_joint_state()
         )
 
-        tcp_state = (
-            self.arm.get_tcp_state()
-        )
-
         # --------------------------------------------------------
         # O6
         # --------------------------------------------------------
@@ -809,19 +838,16 @@ class DobotCR5O6(Robot):
                 f"got {hand_state.shape}"
             )
 
-        # --------------------------------------------------------
-        # Combined state = 18
-        # --------------------------------------------------------
-
-        state = np.concatenate(
-            [
-                joint_state,
-                tcp_state,
-                hand_state,
-            ]
-        ).astype(
-            np.float32
-        )
+        if self.config.control_mode == "joint_target":
+            # New CR3/O6 dataset: six joint positions followed by six O6
+            # positions.  The values remain radians/0-255 as recorded by the
+            # dataset; only outgoing ROS joint commands use degrees.
+            state = np.concatenate([joint_state, hand_state]).astype(np.float32)
+            state_names = CR3_JOINT_STATE_NAMES
+        else:
+            tcp_state = self.arm.get_tcp_state()
+            state = np.concatenate([joint_state, tcp_state, hand_state]).astype(np.float32)
+            state_names = CR5_JOINT_STATE_NAMES + CR5_TCP_STATE_NAMES + O6_STATE_NAMES
 
         # --------------------------------------------------------
         # Cameras
@@ -832,30 +858,32 @@ class DobotCR5O6(Robot):
                 "Camera 'left_wrist_0_rgb' is not configured."
             )
 
+        if "base_0_rgb" not in self.cameras:
+            raise RuntimeError(
+                f"Camera 'base_0_rgb' is not configured."
+            )
+
+        # third camera
         if "right_wrist_0_rgb" not in self.cameras:
             raise RuntimeError(
-                "Camera 'right_wrist_0_rgb' is not configured."
+                f"Camera 'right_wrist_0_rgb' is not configured."
             )
 
         left_image = self._get_camera_rgb(
             self.cameras["left_wrist_0_rgb"]
         )
 
+        base_image = self._get_camera_rgb(
+            self.cameras["base_0_rgb"]
+        )
+
+        # base_wrist_roi = self._get_right_wrist_roi(base_image)
+
+        # third camera
         right_image = self._get_camera_rgb(
             self.cameras["right_wrist_0_rgb"]
         )
 
-        base_image = (
-            self._get_base_from_right(
-                right_image
-            )
-        )
-
-        state_names = (
-            CR5_JOINT_STATE_NAMES
-            + CR5_TCP_STATE_NAMES
-            + O6_STATE_NAMES
-        )
 
         # Return raw, named hardware values.  The dataset/policy-facing
         # ``observation.state`` vector is constructed centrally by
@@ -882,13 +910,19 @@ class DobotCR5O6(Robot):
         action: RobotAction,
     ) -> RobotAction:
 
+        action_names = (
+            CR3_JOINT_TARGET_ACTION_NAMES
+            if self.config.control_mode == "joint_target"
+            else ACTION_NAMES
+        )
+
         if "action" in action:
             action_values = action["action"]
         else:
-            missing = [name for name in ACTION_NAMES if name not in action]
+            missing = [name for name in action_names if name not in action]
             if missing:
                 raise ValueError(f"Missing action features: {missing}")
-            action_values = [action[name] for name in ACTION_NAMES]
+            action_values = [action[name] for name in action_names]
 
         action_array = np.asarray(action_values, dtype=np.float64).reshape(-1)
 
@@ -897,6 +931,57 @@ class DobotCR5O6(Robot):
                 f"Expected action shape (12,), "
                 f"got {action_array.shape}"
             )
+
+        if self.config.control_mode == "joint_target":
+            if not np.all(np.isfinite(action_array)):
+                raise ValueError("Joint target action contains non-finite values")
+
+            target_rad = action_array[:6].copy()
+            lower = np.asarray(self.config.joint_target_min_rad, dtype=np.float64)
+            upper = np.asarray(self.config.joint_target_max_rad, dtype=np.float64)
+            if lower.shape != (6,) or upper.shape != (6,) or np.any(lower >= upper):
+                raise ValueError(
+                    "joint_target_min_rad and joint_target_max_rad must be valid six-element bounds"
+                )
+            if self.config.enable_action_limits:
+                target_rad = np.clip(target_rad, lower, upper)
+            elif not self._unbounded_action_warning_emitted:
+                logger.warning(
+                    "Absolute joint target limits are disabled; raw model targets will be sent."
+                )
+                self._unbounded_action_warning_emitted = True
+
+            # Dataset values are radians; ROS joint commands use degrees. The
+            # seventh value is the external-axis slot of the shared interface.
+            target_deg = np.concatenate(
+                [np.rad2deg(target_rad), np.array([0.0], dtype=np.float64)]
+            )
+            hand_command = np.clip(action_array[6:], 0, 255).astype(int).tolist()
+
+            self._action_count += 1
+            should_log_action = self._action_count == 1 or self._action_count % 20 == 0
+            if should_log_action:
+                logger.info(
+                    "Joint target action #%d: target_rad=%s, target_deg=%s, hand=%s",
+                    self._action_count,
+                    [round(float(value), 6) for value in target_rad],
+                    [round(float(value), 3) for value in target_deg],
+                    hand_command,
+                )
+
+            self.arm.send_joint_command(target_deg)
+            self.hand.set_joint_positions(hand_command)
+
+            if should_log_action:
+                logger.info(
+                    "Joint target action #%d completed: CR3 joints and O6 command dispatched",
+                    self._action_count,
+                )
+
+            return {
+                name: float(value)
+                for name, value in zip(action_names, action_array, strict=True)
+            }
 
         # --------------------------------------------------------
         # CR5 delta TCP
@@ -1026,7 +1111,7 @@ class DobotCR5O6(Robot):
 
         return {
             name: float(value)
-            for name, value in zip(ACTION_NAMES, action_array, strict=True)
+            for name, value in zip(action_names, action_array, strict=True)
         }
 
     # ============================================================

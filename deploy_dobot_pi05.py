@@ -29,7 +29,7 @@ from lerobot.robots.dobot_cr5_o6.dobot_cr5_o6 import DobotCR5O6
 # -----------------------------------------------------------------------------
 
 MODEL_ROOT = "/home/je/code/lerobot/dataset/cr5_o6_motor_recognition_pi05_expert"
-CHECKPOINT = "050000"
+CHECKPOINT = "last"
 MODEL_PATH = f"{MODEL_ROOT}/checkpoints/{CHECKPOINT}/pretrained_model"
 
 # The PI05 training config records this as the dataset root.  The model output
