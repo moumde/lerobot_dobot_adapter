@@ -1,6 +1,5 @@
 # 代码部署
-先拉取lerobot代码框架
-将本文件夹置于lerobot/src/lerobot/robots/下
+项目文件夹置于lerobot/src/lerobot/robots/下
 
 
 # ros环境启动

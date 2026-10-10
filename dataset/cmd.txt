@@ -1,0 +1,138 @@
+lerobot-train --help | grep -A 20 "dataset.repo_id"
+
+lerobot-train \
+    --policy.type=act \
+    --dataset.repo_id=cr5_o6_20260909_200040_349965059 \
+    --dataset.root=/home/je/code/lerobot/dataset/cr5_o6_20260909_200040_349965059 \
+    --output_dir=/home/je/code/lerobot/dataset/cr5_o6_20260909_200040_349965059_act_result \
+    --policy.device=cuda \
+    --policy.push_to_hub=false \
+    --policy.optimizer_lr=3e-5 \
+    --policy.optimizer_lr_backbone=1e-5 \
+    --steps=50000 \
+    --batch_size=128 \
+    --save_freq=5000
+  
+lerobot-train \
+    --policy.type=act \
+    --dataset.repo_id=cr5_o6_20260909_200040_349965059_100k \
+    --dataset.root=/home/je/code/lerobot/dataset/cr5_o6_20260909_200040_349965059 \
+    --output_dir=/home/je/code/lerobot/dataset/cr5_o6_20260909_200040_349965059_act_result_100k \
+    --policy.device=cuda \
+    --policy.push_to_hub=false \
+    --policy.optimizer_lr=1e-5 \
+    --policy.optimizer_lr_backbone=5e-6 \
+    --steps=100000 \
+    --batch_size=128 \
+    --save_freq=10000
+
+lerobot-train \
+    --policy.type=act \
+    --dataset.repo_id=cr5_o6_20260915_172625_722385566 \
+    --dataset.root=/home/je/code/lerobot/dataset/cr5_o6_20260915_172625_722385566 \
+    --output_dir=/home/je/code/lerobot/dataset/cr5_o6_20260915_172625_722385566_act_result_new \
+    --policy.device=cuda \
+    --policy.push_to_hub=false \
+    --policy.optimizer_lr=1e-5 \
+    --policy.optimizer_lr_backbone=5e-6 \
+    --policy.use_amp=true \
+    --steps=50000 \
+    --batch_size=32 \
+    --save_freq=10000
+    --resume=true \
+    --config_path=/home/je/code/lerobot/dataset/cr5_o6_20260915_172625_722385566_act_result/checkpoints/last/pretrained_model/train_config.json
+    
+lerobot-train \
+    --policy.type=act \
+    --dataset.repo_id=cr5_o6_20260915_172625_722385566 \
+    --dataset.root=/home/je/code/lerobot/dataset/cr5_o6_20260915_172625_722385566 \
+    --output_dir=/home/je/code/lerobot/dataset/cr5_o6_20260915_172625_722385566_act_result \
+    --policy.device=cuda \
+    --policy.push_to_hub=false \
+    --policy.optimizer_lr=3e-5 \
+    --policy.optimizer_lr_backbone=1e-5 \
+    --policy.use_amp=true \
+    --steps=100000 \
+    --batch_size=32 \
+    --save_freq=10000 \
+    --resume=true \
+    --config_path=/home/je/code/lerobot/dataset/cr5_o6_20260915_172625_722385566_act_result/checkpoints/last/pretrained_model/train_config.json
+
+
+lerobot-train \
+    --dataset.repo_id=cr5_o6_20250917 \
+    --dataset.root=/home/je/code/lerobot/dataset/cr5_o6_20250917 \
+    --policy.path=/home/je/code/lerobot/dataset/cr5_o6_20260915_172625_722385566_act_result/checkpoints/last/pretrained_model \
+    --policy.device=cuda \
+    --policy.push_to_hub=false \
+    --policy.optimizer_lr=1e-5 \
+    --policy.optimizer_lr_backbone=5e-6 \
+    --steps=50000 \
+    --batch_size=64 \
+    --save_freq=5000 \
+    --output_dir=/home/je/code/lerobot/dataset/cr5_o6_20250917_act_result
+
+lerobot-train \
+    --policy.type=act \
+    --dataset.repo_id=cr5_o6_20250917 \
+    --dataset.root=/home/je/code/lerobot/dataset/cr5_o6_20250917 \
+    --output_dir=/home/je/code/lerobot/dataset/cr5_o6_20250917_act_result \
+    --policy.device=cuda \
+    --policy.push_to_hub=false \
+    --policy.optimizer_lr=1e-5 \
+    --policy.optimizer_lr_backbone=5e-6 \
+    --steps=120000 \
+    --batch_size=32 \
+    --save_freq=10000 \
+    --resume=true \
+    --config_path=/home/je/code/lerobot/dataset/cr5_o6_20250917_act_result/checkpoints/last/pretrained_model/train_config.json
+
+
+
+lerobot-train \
+  --policy.type=pi05 \
+  --dataset.repo_id=cr5_o6_20260909_200040_349965059_pi05 \
+  --dataset.root=/home/je/code/lerobot/dataset/cr5_o6_20260909_200040_349965059 \
+  --output_dir=/home/je/code/lerobot/dataset/cr5_o6_20260909_200040_349965059_pi05_result \
+  --policy.device=cuda \
+  --policy.push_to_hub=false \
+  --policy.use_amp=true \
+  --policy.dtype=bfloat16 \
+  --policy.gradient_checkpointing=true \
+  --policy.freeze_vision_encoder=true \
+  --policy.train_expert_only=true \
+  --steps=50000 \
+  --batch_size=1 \
+  --save_freq=10000
+
+lerobot-train \
+  --policy.type=pi05 \
+  --dataset.repo_id=cr5_o6_20260909_200040_349965059_pi05 \
+  --dataset.root=/home/je/code/lerobot/dataset/cr5_o6_20260909_200040_349965059 \
+  --output_dir=/home/je/code/lerobot/dataset/cr5_o6_20260909_200040_349965059_pi05_result \
+  --policy.device=cuda \
+  --policy.push_to_hub=false \
+  --policy.use_amp=true \
+  --policy.dtype=bfloat16 \
+  --policy.gradient_checkpointing=true \
+  --policy.freeze_vision_encoder=false \
+  --policy.train_expert_only=true \
+  --policy.optimizer_lr=2.5e-5 \
+  --policy.scheduler_warmup_steps=2000 \
+  --policy.scheduler_decay_steps=100000 \
+  --policy.scheduler_decay_lr=2.5e-6 \
+  --policy.chunk_size=50 \
+  --policy.n_action_steps=50 \
+  --steps=150000 \
+  --batch_size=1 \
+  --save_freq=10000
+  
+lerobot-train   --policy.type=pi05   --dataset.repo_id=cr5_o6_20250917_pi05   --dataset.root=/home/je/code/lerobot/dataset/cr5_o6_20250917   --output_dir=/home/je/code/lerobot/dataset/cr5_o6_20250917_pi05_result   --policy.device=cuda   --policy.push_to_hub=false   --policy.use_amp=true   --policy.dtype=bfloat16   --policy.gradient_checkpointing=true   --policy.freeze_vision_encoder=false   --policy.train_expert_only=true   --policy.optimizer_lr=2.5e-5   --policy.scheduler_warmup_steps=2000   --policy.scheduler_decay_steps=100000   --policy.scheduler_decay_lr=2.5e-6   --policy.chunk_size=50   --policy.n_action_steps=50   --steps=100000   --batch_size=32   --save_freq=20000
+
+lerobot-train   --policy.type=pi05   --dataset.repo_id=cr5_o6_20250917_pi05   --dataset.root=/home/je/code/lerobot/dataset/cr5_o6_20250917   --output_dir=/home/je/code/lerobot/dataset/cr5_o6_20250917_pi05_result   --policy.device=cuda   --policy.push_to_hub=false   --policy.use_amp=true   --policy.dtype=bfloat16   --policy.gradient_checkpointing=true   --policy.optimizer_lr=2.5e-5   --policy.scheduler_warmup_steps=2000   --policy.scheduler_decay_steps=100000   --policy.scheduler_decay_lr=2.5e-6   --policy.chunk_size=50   --policy.n_action_steps=50   --steps=100000   --batch_size=32   --save_freq=20000
+
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
+lerobot-train   --policy.path=/home/je/code/models/pi05_base   --dataset.repo_id=cr5_o6_20250917_pi05   --dataset.root=/home/je/code/lerobot/dataset/cr5_o6_20250917   --output_dir=/home/je/code/lerobot/dataset/cr5_o6_20250917_pi05_lora_result   --policy.device=cuda   --policy.push_to_hub=false   --policy.use_amp=true   --policy.dtype=bfloat16   --policy.gradient_checkpointing=true   --policy.optimizer_lr=2.5e-5   --policy.scheduler_warmup_steps=2000   --policy.scheduler_decay_steps=100000   --policy.scheduler_decay_lr=2.5e-6   --policy.chunk_size=50   --policy.n_action_steps=50   --peft.method_type=LORA   --peft.r=16   --steps=100000   --batch_size=8   --save_freq=10000
+
+
