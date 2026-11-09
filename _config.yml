@@ -1,0 +1,24 @@
+exclude:
+  - dataset/
+  - docker/
+  - docs/
+  - examples/
+  - media/
+  - scripts/
+  - src/
+  - tests/
+  - AGENT_GUIDE.md
+  - AGENTS.md
+  - AI_POLICY.md
+  - CLAUDE.md
+  - CODE_OF_CONDUCT.md
+  - CONTRIBUTING.md
+  - LICENSE
+  - MANIFEST.in
+  - Makefile
+  - SECURITY.md
+  - docs-requirements.txt
+  - pyproject.toml
+  - setup.py
+  - uv.lock
+  - README.md
